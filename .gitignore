@@ -4,3 +4,4 @@ data/*
 __pycache__/
 .venv/
 Task Arithmetic Datasets/
+launch_scripts/base.sh
