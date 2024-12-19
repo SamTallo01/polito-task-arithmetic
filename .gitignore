@@ -3,5 +3,6 @@ checkpoints/*
 data/*
 __pycache__/
 .venv/
-Task Arithmetic Datasets/
+Task_Arithmetic_Datasets/
 launch_scripts/base.sh
+.gitignore
