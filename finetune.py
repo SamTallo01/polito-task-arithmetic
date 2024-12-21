@@ -61,16 +61,14 @@ def finetune(args):
     #SGD is used as the optimizer for the model
     optimizer = torch.optim.SGD(params, lr=args.lr, momentum=0.9, weight_decay=0.0001)
 
-
-
     # Saving zero-shot model
     if args.save is not None:
         os.makedirs(ckpdir, exist_ok=True)
         model_path = os.path.join(ckpdir, f'zeroshot.pt')
-        model.module.image_encoder.save(model_path)
+        model.image_encoder.save(model_path)
 
     for epoch in range(args.epochs):
-        model = model.cuda()
+        model = model.to(device)
         model.train()
         data_loader = get_dataloader(
             dataset, is_train=True, args=args, image_encoder=None)
@@ -83,8 +81,9 @@ def finetune(args):
             optimizer.zero_grad()
             #This is to ensures the input batches used during training or evaluation are in a consistent format
             batch = maybe_dictionarize(batch)
-            inputs = batch['images'].to('cuda:0')
-            labels = batch['labels'].to('cuda:0')
+            inputs = batch['images'].to(device)
+            labels = batch['labels'].to(device)
+
             data_time = time.time() - start_time
 
             #logit is for storing the output of the last layer and training the model
@@ -108,7 +107,7 @@ def finetune(args):
                 )
 
     # Evaluate (implementation is missing)
-    image_encoder = model.module.image_encoder
+    image_encoder = model.image_encoder
     #evaluate(image_encoder, args) 
 
     if args.save is not None:
@@ -119,11 +118,10 @@ def finetune(args):
 
 
 
-
 if __name__ == '__main__':
-    data_location = '<your_data_location>'
-    models = ['ViT-B-32']
-    datasets = ['DTD', 'EuroSAT', 'GTSRB', 'MNIST', 'RESISC45','SVHN']
+    data_location = 'Task_Arithmetic_Datasets'
+    models = ['ViT-B-32-quickgelu']
+    datasets = ['EuroSAT', 'GTSRB', 'MNIST', 'RESISC45','SVHN']
     epochs = {
         'DTD': 76,
         'EuroSAT': 12,
@@ -145,5 +143,5 @@ if __name__ == '__main__':
             args.train_dataset = dataset + 'Val'
             args.batch_size = 32
             args.model = model
-            args.save = f'checkpoints/{model}'
+            args.save = f'checkpoints'
             finetune(args)
