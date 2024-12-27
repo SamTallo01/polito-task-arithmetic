@@ -25,8 +25,8 @@ def eval_single_dataset(image_encoder, dataset_name, args):
         location=args.data_location,
         batch_size=args.batch_size
     )
-    dataloader = get_dataloader(
-        dataset, is_train=False, args=args, image_encoder=None)
+
+    dataloader = get_dataloader( dataset, is_train=args.split, args=args, image_encoder=None )
     device = args.device
 
     with torch.no_grad():
@@ -52,20 +52,27 @@ def eval_single_dataset(image_encoder, dataset_name, args):
     return metrics
 
 def evaluate(image_encoder, args):
-    if args.eval_datasets is None:
-        return
+    dataset_name = args.eval_datasets# + 'Val'
+
+    print('='*100)
+    if args.split is not None:
+        if args.split == True:
+            print('Evaluating on ' + args.eval_datasets + '  # Training set')
+        else:
+            print('Evaluating on ' + args.eval_datasets + '  # Test set')
+    
+    print('='*100)
+
     info = vars(args)
-    for i, dataset_name in enumerate(args.eval_datasets):
-        print('Evaluating on', dataset_name)
 
-        results = eval_single_dataset(image_encoder, dataset_name, args)
+    results = eval_single_dataset(image_encoder, dataset_name, args)
 
-        if 'top1' in results:
-            print(f"{dataset_name} Top-1 accuracy: {results['top1']:.4f}")
-        for key, val in results.items():
-            if 'worst' in key or 'f1' in key.lower() or 'pm0' in key:
-                print(f"{dataset_name} {key}: {val:.4f}")
-            info[dataset_name + ':' + key] = val
+    if 'top1' in results:
+        print(f"{dataset_name} Top-1 accuracy: {results['top1']:.4f}")
+    for key, val in results.items():
+        if 'worst' in key or 'f1' in key.lower() or 'pm0' in key:
+            print(f"{dataset_name} {key}: {val:.4f}")
+        info[dataset_name + ':' + key] = val
 
     if args.results_db is not None:
         dirname = os.path.dirname(args.results_db)

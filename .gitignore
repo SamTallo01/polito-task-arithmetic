@@ -6,3 +6,4 @@ __pycache__/
 Task_Arithmetic_Datasets/
 launch_scripts/base.sh
 .gitignore
+results

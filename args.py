@@ -13,6 +13,18 @@ def parse_arguments():
         help="The root directory for the datasets.",
     )
     parser.add_argument(
+        "--split",
+        type=bool,
+        default=True,
+        help="Used for the get_dataloader(..) to access the train/val/test split.",
+    )
+    parser.add_argument(
+        "--training",
+        type=bool,
+        default=True,
+        help="Used to specify the training of the dataset.",
+    )
+    parser.add_argument(
         "--eval-datasets",
         default=None,
         type=lambda x: x.split(","),

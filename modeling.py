@@ -2,7 +2,7 @@ import open_clip
 import torch
 
 import utils
-
+from utils import torch_load
 
 class ImageEncoder(torch.nn.Module):
     def __init__(self, args, keep_lang=False):
@@ -42,22 +42,9 @@ class ImageEncoder(torch.nn.Module):
         utils.torch_save(self, filename)
 
     @classmethod
-    def load(cls, model_name, filename):
+    def load(cls, filename):
         print(f"Loading image encoder from {filename}")
-        state_dict = torch.load(filename, map_location="cpu")
-        return cls.load(model_name, state_dict)
-
-    @classmethod
-    def load_from_state_dict(cls, model_name, state_dict):
-        (
-            self.model,
-            self.train_preprocess,
-            self.val_preprocess,
-        ) = open_clip.create_model_and_transforms(
-            name, pretrained=pretrained, cache_dir=args.openclip_cachedir
-        )
-        self.model.load_from_state_dict(state_dict)
-
+        return utils.torch_load(filename)
 
 class ClassificationHead(torch.nn.Linear):
     def __init__(self, normalize, weights, biases=None):

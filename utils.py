@@ -7,7 +7,6 @@ from tqdm.auto import tqdm
 from datasets.common import get_dataloader, maybe_dictionarize
 from datasets.registry import get_dataset
 
-
 def torch_save(model, save_path):
     if os.path.dirname(save_path) != "":
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
@@ -19,6 +18,12 @@ def torch_load(save_path, device=None):
     if device is not None:
         model = model.to(device)
     return model
+
+def get_logits(inputs, classifier):
+    assert callable(classifier)
+    if hasattr(classifier, "to"):
+        classifier = classifier.to(inputs.device)
+    return classifier(inputs)
 
 
 class DotDict(dict): 
