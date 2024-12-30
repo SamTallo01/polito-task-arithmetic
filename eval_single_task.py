@@ -52,7 +52,7 @@ def eval_single_dataset(image_encoder, dataset_name, args):
     return metrics
 
 def evaluate(image_encoder, args):
-    dataset_name = args.eval_datasets# + 'Val'
+    dataset_name = args.eval_datasets
 
     print('='*100)
     if args.split is not None:
