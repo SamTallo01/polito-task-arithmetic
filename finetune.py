@@ -7,6 +7,7 @@ from datasets.templates import get_templates
 from heads import get_classification_head
 from datasets.common import get_dataloader, maybe_dictionarize
 from eval_single_task import evaluate
+
 from args import parse_arguments
 
 
@@ -17,8 +18,13 @@ def finetune(args):
     print('='*100)
     ckpdir = os.path.join(args.save, train_dataset)
 
-    ft_path = (os.path.join(args.save, train_dataset, "finetuned.pt"))
-    zs_path = (os.path.join(args.save, train_dataset, "zeroshot.pt"))
+    # Check if checkpoints already exist
+    ft_path = (
+        os.path.join(args.save, train_dataset, "finetuned.pt")
+    )
+    zs_path = (
+        os.path.join(args.save, train_dataset, "zeroshot.pt")
+    )
 
     assert train_dataset is not None, "Please provide a training dataset."
 
@@ -54,7 +60,7 @@ def finetune(args):
     params = [p for p in model.parameters() if p.requires_grad]
     
     #SGD is used as the optimizer for the model
-    optimizer = torch.optim.SGD(params, lr=args.lr, weight_decay=0.0)
+    optimizer = torch.optim.SGD(params, lr=args.lr, weight_decay=0)
 
     if args.save is not None:
         zs_path = os.path.join(ckpdir, 'zeroshot.pt')
@@ -65,8 +71,6 @@ def finetune(args):
                 image_encoder.save(zs_path)
             else:
                 print(f"Zeroshot checkpoint already exists at {zs_path}, skipping save.")
-
-    
 
     if args.train is not None and args.train is True:
         for epoch in range(args.epochs):
@@ -94,6 +98,8 @@ def finetune(args):
                 loss = loss_fn(logits, labels)
 
                 loss.backward()
+                
+                #is a technique to prevent the gradients from becoming too large during backpropagation.
 
                 optimizer.step()
                 batch_time = time.time() - start_time
@@ -110,7 +116,6 @@ def finetune(args):
         print(f"Saving fine-tuned checkpoint at {ft_path}")
         image_encoder.save(ft_path)
         
-
     # Evaluate
     image_encoder = model.image_encoder
     evaluate(image_encoder, args) 
@@ -121,7 +126,7 @@ if __name__ == '__main__':
 
     data_location = 'Task_Arithmetic_Datasets'
     model = 'ViT-B-32-quickgelu'
-    datasets = ['DTD']#, 'EuroSAT'] #,'DTD', 'EuroSAT']
+    datasets = ['SVHN']
     epochs = {
         'DTD': 76,
         'EuroSAT': 12,
@@ -139,20 +144,20 @@ if __name__ == '__main__':
         args.lr = 1e-4
         args.epochs = epochs[dataset]
         args.data_location = data_location
-        args.train_dataset = dataset #+ 'Val' 
+        args.train_dataset = dataset + 'Val' 
         args.batch_size = 32
         args.model = model
 
         args.save = f'checkpoints'                      #checkpoint directory
-        args.eval_datasets = dataset #+ 'Val'            # Use Val for train and val, remove for test + split = False
+        args.eval_datasets = dataset + 'Val'            # Use Val for train and val, remove for test + split = False
         
-        args.load = f'checkpoints/DTDVal/zeroshot.pt'   # Used for loading a model
+        #args.load = f'checkpoints/DTDVal/finetuned.pt'  # Used for loading a model
 
-        args.split = False                               # Used only for the eval function. 
+        args.split = True                               # Used only for the eval function. 
                                                         # True: Train split | False: Val split
 
-        args.train = False                              # Used to train the model
-        args.results_db = f'results'                    # Used to save the results in a .csv file
+        args.train = True                             # Used to train the model
+        #args.results_db = f'results'                   # Used to save the results in a .csv file
         finetune(args)
 
 
