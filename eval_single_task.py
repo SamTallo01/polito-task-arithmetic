@@ -51,37 +51,22 @@ def eval_single_dataset(image_encoder, dataset_name, args):
     
     return metrics
 
+
 def evaluate(image_encoder, args):
-    dataset_name = args.eval_datasets
+    if args.eval_datasets is None:
+        return
+    per_dataset_results = {}
+    eval_datasets = (
+        args.eval_datasets
+        if args.control_dataset is None
+        else args.eval_datasets + [args.control_dataset]
+    )
+    for dataset_name in eval_datasets:
+        print("Evaluating on", dataset_name)
 
-    print('='*100)
-    if args.split is not None:
-        if args.split == True:
-            print('Evaluating on ' + args.eval_datasets + '  # Training set')
-        else:
-            print('Evaluating on ' + args.eval_datasets + '  # Test set')
-    
-    print('='*100)
+        results = eval_single_dataset(image_encoder, dataset_name, args)
 
-    info = vars(args)
-
-    results = eval_single_dataset(image_encoder, dataset_name, args)
-
-    if 'top1' in results:
         print(f"{dataset_name} Top-1 accuracy: {results['top1']:.4f}")
-    for key, val in results.items():
-        if 'worst' in key or 'f1' in key.lower() or 'pm0' in key:
-            print(f"{dataset_name} {key}: {val:.4f}")
-        info[dataset_name + ':' + key] = val
+        per_dataset_results[dataset_name + ":top1"] = results["top1"]
 
-    if args.results_db is not None:
-        dirname = os.path.dirname(args.results_db)
-        if dirname:
-            os.makedirs(dirname, exist_ok=True)
-        with open(args.results_db, 'a+') as f:
-            f.write(json.dumps(info) + '\n')
-        print(f'Results saved to {args.results_db}.')
-    else:
-        print('Results not saved (to do so, use --results_db to specify a path).')
-
-    return info
+    return per_dataset_results
