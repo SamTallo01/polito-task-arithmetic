@@ -13,12 +13,14 @@ from modeling import ImageClassifier
 from datasets.registry import get_dataset
 
 
-def eval_single_dataset(image_encoder, dataset_name, args):
+def eval_single_dataset(image_encoder, dataset_name, args):    
+   #Loading the classification head for a specific dataset
     classification_head = get_classification_head(args, dataset_name)
     model = ImageClassifier(image_encoder, classification_head)
 
     model.eval()
 
+    # Load the dataset and dataLoader
     dataset = get_dataset(
         dataset_name,
         model.val_preprocess,
@@ -29,6 +31,7 @@ def eval_single_dataset(image_encoder, dataset_name, args):
     dataloader = get_dataloader( dataset, is_train=args.split, args=args, image_encoder=None )
     device = args.device
 
+    #Evalutating the model
     with torch.no_grad():
         top1, correct, n = 0., 0., 0.
         for i, data in enumerate(tqdm.tqdm(dataloader)):
@@ -51,7 +54,6 @@ def eval_single_dataset(image_encoder, dataset_name, args):
     
     return metrics
 
-
 def evaluate(image_encoder, args):
     if args.eval_datasets is None:
         return
@@ -68,5 +70,20 @@ def evaluate(image_encoder, args):
 
         print(f"{dataset_name} Top-1 accuracy: {results['top1']:.4f}")
         per_dataset_results[dataset_name + ":top1"] = results["top1"]
+        
+        #compute normalized accuracy
+        if dataset_name in args.finetuning_accuracies:
+            per_dataset_results[dataset_name + ":normalized_top1"] = (
+                results["top1"] / args.finetuning_accuracies[dataset_name]
+            )
+            print(
+                f"{dataset_name} Normalized Top-1 accuracy: "
+                f"{per_dataset_results[dataset_name + ':normalized_top1']:.4f}"
+            )
+        else:
+            raise KeyError(
+                f"Finetuning accuracy for dataset {dataset_name} is not available in args.finetuning_accuracies."
+            )
+        
 
     return per_dataset_results
