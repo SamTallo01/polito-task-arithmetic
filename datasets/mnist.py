@@ -7,7 +7,7 @@ class MNIST:
                  preprocess,
                  location=os.path.expanduser('~/data'),
                  batch_size=128,
-                 num_workers=16):
+                 num_workers=0):
 
 
         self.train_dataset = datasets.MNIST(

@@ -283,7 +283,7 @@ class RESISC45:
                  preprocess,
                  location=os.path.expanduser('~/data'),
                  batch_size=32,
-                 num_workers=16):
+                 num_workers=0):
 
         self.train_dataset = RESISC45Dataset(root=location, split='train', transforms=preprocess)
         self.train_loader = torch.utils.data.DataLoader(

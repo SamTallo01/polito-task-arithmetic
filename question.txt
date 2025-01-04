@@ -1,3 +1,0 @@
-1. is the zero-shot the model with its pretrained weights, and not fine-tunned.
-2. are we using the eval_single_task as ecaluation in fine-tuning 
-3. SGD, momentum and  weight_decay values

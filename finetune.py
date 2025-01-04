@@ -99,8 +99,6 @@ def finetune(args):
 
                 loss.backward()
                 
-                #is a technique to prevent the gradients from becoming too large during backpropagation.
-
                 optimizer.step()
                 batch_time = time.time() - start_time
 
@@ -126,7 +124,7 @@ if __name__ == '__main__':
 
     data_location = 'Task_Arithmetic_Datasets'
     model = 'ViT-B-32-quickgelu'
-    datasets = ['SVHN']
+    datasets = ['RESISC45', 'SVHN']
     epochs = {
         'DTD': 76,
         'EuroSAT': 12,
@@ -148,16 +146,16 @@ if __name__ == '__main__':
         args.batch_size = 32
         args.model = model
 
-        args.save = f'checkpoints'                      #checkpoint directory
-        args.eval_datasets = dataset + 'Val'            # Use Val for train and val, remove for test + split = False
-        
-        #args.load = f'checkpoints/DTDVal/finetuned.pt'  # Used for loading a model
+        args.save = f'checkpoints'                          #checkpoint directory
+        eval_datasets = [dataset + "Val" for dataset in datasets]                # Use Val for train and val, remove for test + split = False
+        args.eval_datasets = eval_datasets
+        #args.load = f'checkpoints/DTDVal/zeroshot.pt'     # Used for loading a model
 
-        args.split = True                               # Used only for the eval function. 
-                                                        # True: Train split | False: Val split
+        args.split = True                                   # Used only for the eval function. 
+                                                            # True: Train split | False: Val split
 
-        args.train = True                             # Used to train the model
-        #args.results_db = f'results'                   # Used to save the results in a .csv file
+        args.train = False                                   # Used to train the model
+        args.results_db = f'results'                        # Used to save the results in a .csv file
         finetune(args)
 
 
