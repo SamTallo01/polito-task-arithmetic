@@ -9,7 +9,7 @@ from task_vectors import NonLinearTaskVector
 
 def function(args):
 
-    eval_datasets = ["DTD", "EuroSAT", "GTSRB", "MNIST", "RESISC45", "SVHN"]
+    eval_datasets = ["DTD", "EuroSAT"]#, "GTSRB", "MNIST", "RESISC45", "SVHN"]
     task_vectors = []
 
     for dataset in eval_datasets:
@@ -22,19 +22,30 @@ def function(args):
     task_vector = sum(task_vectors)
 
     args.eval_datasets = [dataset + "Val" for dataset in eval_datasets]
-
+    val_metrics = {}
     # We use the validation set to choose the optimal coefficient.
-    val_metrics = evaluate_task_vector(
+    if args.opt_coeff is not None:
+
+        optimal_coef = args.opt_coeff
+        val_metrics[optimal_coef] = evaluate_task_vector_at_coef(
         task_vector,
         pretrained_checkpoint,
         args,
+        float(optimal_coef),
     )
+    else:
+        val_metrics = evaluate_task_vector(
+            task_vector,
+            pretrained_checkpoint,
+            args,
+        )
 
-    optimal_coef = find_optimal_coef(
-        val_metrics,
-        metric="avg_normalized_top1",
-        minimize=False,
-    )
+    if args.opt_coeff is None:
+        optimal_coef = find_optimal_coef(
+            val_metrics,
+            metric="avg_normalized_top1",
+            minimize=False,
+        )
 
     print("=&" * 50)
     print(f"Optimal coefficient: {optimal_coef}")
@@ -77,6 +88,7 @@ def function(args):
                 print("=" * 100)
                 print(f"Training absolute accuracy for {dataset}: {metrics[dataset + ':top1']}")
                 print(f"Training normalized accuracy for {dataset}: {metrics[dataset + ':normalized_top1']}")
+
     print("=" * 100)
     print()
     print()
@@ -99,6 +111,7 @@ if __name__ == '__main__':
     args.data_location = data_location
     args.model = model
     args.save = f'checkpoints'                        
+    args.opt_coeff = 0.3
 
     args.finetuning_accuracies = {
         'DTDVal': 0.9876,
@@ -116,3 +129,23 @@ if __name__ == '__main__':
     }
     
     function(args)
+
+
+# for single_dataset in eval_datasets:
+#         print("\n" + "=" * 100)
+#         print(f"Evaluating {single_dataset} dataset with optimal coefficient (α = {optimal_coef:.2f}).")
+#         print("=" * 100)
+
+#         single_task_vector = NonLinearTaskVector(
+#             f"{args.save}/{single_dataset}Val/zeroshot.pt",
+#             f"{args.save}/{single_dataset}Val/finetuned.pt"
+#         )
+
+#         image_encoder = single_task_vector.apply_to(pretrained_checkpoint, scaling_coef=optimal_coef)
+
+#         for split in ["test", "train"]:
+#             eval_dataset = single_dataset if split == "test" else f"{single_dataset}Val"
+#             accuracy = eval_single_dataset(image_encoder, eval_dataset, args)["top1"]
+#             print("-" * 50)  # Add separator for test/val results
+#             print(f"{split.capitalize()} Accuracy for {eval_dataset} with α = {optimal_coef:.2f}: {accuracy:.4f}")
+#             print("-" * 50)

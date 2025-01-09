@@ -19,12 +19,8 @@ def finetune(args):
     ckpdir = os.path.join(args.save, train_dataset)
 
     # Check if checkpoints already exist
-    ft_path = (
-        os.path.join(args.save, train_dataset, "finetuned.pt")
-    )
-    zs_path = (
-        os.path.join(args.save, train_dataset, "zeroshot.pt")
-    )
+    ft_path = (os.path.join(args.save, train_dataset, "finetuned.pt"))
+    zs_path = (os.path.join(args.save, train_dataset, "zeroshot.pt"))
 
     assert train_dataset is not None, "Please provide a training dataset."
 
@@ -124,7 +120,7 @@ if __name__ == '__main__':
 
     data_location = 'Task_Arithmetic_Datasets'
     model = 'ViT-B-32-quickgelu'
-    datasets = ['RESISC45', 'SVHN']
+    datasets = ['DTD', 'EuroSAT']
     epochs = {
         'DTD': 76,
         'EuroSAT': 12,
@@ -153,7 +149,6 @@ if __name__ == '__main__':
 
         args.split = True                                   # Used only for the eval function. 
                                                             # True: Train split | False: Val split
-
         args.train = False                                   # Used to train the model
         args.results_db = f'results'                        # Used to save the results in a .csv file
         finetune(args)

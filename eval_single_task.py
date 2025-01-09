@@ -3,9 +3,10 @@ import torch
 import utils
 from datasets.common import get_dataloader, maybe_dictionarize
 from heads import get_classification_head
-from modeling import ImageClassifier
+from modeling import ImageClassifier, ImageEncoder
 from datasets.registry import get_dataset
-
+from utils import train_diag_fim_logtr
+from args import parse_arguments
 
 def eval_single_dataset(image_encoder, dataset_name, args):
     classification_head = get_classification_head(args, dataset_name)
@@ -19,7 +20,7 @@ def eval_single_dataset(image_encoder, dataset_name, args):
         location=args.data_location,
         batch_size=args.batch_size,
     )
-    dataloader = get_dataloader(dataset, is_train=False, args=args, image_encoder=None)
+    dataloader = get_dataloader(dataset, is_train=args.split, args=args, image_encoder=None)
     device = args.device
 
     with torch.no_grad():
@@ -46,6 +47,9 @@ def eval_single_dataset(image_encoder, dataset_name, args):
 
 
 def evaluate(image_encoder, args):
+
+    samples_nr = 2000 # How many per-example gradients to accumulate
+
     if args.eval_datasets is None:
         return
     per_dataset_results = {}
@@ -60,5 +64,95 @@ def evaluate(image_encoder, args):
 
         print(f"{dataset_name} Top-1 accuracy: {results['top1']:.4f}")
         per_dataset_results[dataset_name + ":top1"] = results["top1"]
+        logdet_hF = train_diag_fim_logtr(args, image_encoder,  dataset_name, samples_nr)
+        print(f"##################### Log-det of the Fisher Information Matrix: {logdet_hF}")
 
     return per_dataset_results
+
+
+
+def eval_single_task(args):
+
+    eval_datasets = args.eval_datasets
+    samples_nr = 2000 # How many per-example gradients to accumulate
+
+    for dataset in eval_datasets:
+        pretrained_checkpoint = f"{args.save}/{dataset}Val/zeroshot.pt"
+
+        # Training set
+        image_encoder = ImageEncoder.load(pretrained_checkpoint)
+
+        print("=" * 100)
+        print(f"Evaluating on training set of {dataset}.")
+        args.split = True
+        eval_single_dataset(image_encoder, dataset + "Val", args)
+        logdet_hF = train_diag_fim_logtr(args, image_encoder,  dataset + "Val" , samples_nr)
+        print(f"##################### Log-det of the Fisher Information Matrix: {logdet_hF}")
+
+        # Test set
+        print("=" * 100)
+        args.split = False
+        print(f"Evaluating on test set of {dataset}.")
+        eval_single_dataset(image_encoder, dataset, args)
+        logdet_hF = train_diag_fim_logtr(args, image_encoder, dataset, samples_nr)
+        print(f"##################### Log-det of the Fisher Information Matrix: {logdet_hF}")
+
+    print("=" * 100)
+    print(f"Evaluating on the finetuned models")
+    print("=" * 100)
+
+    for dataset in eval_datasets:
+        finetuned_checkpoint = f"{args.save}/{dataset}Val/finetuned.pt"
+
+        # Training set
+        image_encoder = ImageEncoder.load(finetuned_checkpoint)
+
+        print("=" * 100)
+        print(f"Evaluating on training set.")
+        args.split = True
+        eval_single_dataset(image_encoder, dataset + "Val", args)
+        logdet_hF = train_diag_fim_logtr(args, image_encoder, dataset + "Val", samples_nr)
+        print(f"##################### Log-det of the Fisher Information Matrix: {logdet_hF}")
+
+        # Test set
+        print("=" * 100)
+        args.split = False
+        print(f"Evaluating on test set.")
+        eval_single_dataset(image_encoder, dataset, args)
+        logdet_hF = train_diag_fim_logtr(args, image_encoder, dataset, samples_nr)
+        print(f"##################### Log-det of the Fisher Information Matrix: {logdet_hF}")
+
+    return
+
+
+
+
+if __name__ == '__main__':
+
+    data_location = 'Task_Arithmetic_Datasets'
+    model = 'ViT-B-32-quickgelu'
+    datasets = ['DTD', 'EuroSAT']
+    epochs = {
+        'DTD': 76,
+        'EuroSAT': 12,
+        'GTSRB': 11,
+        'MNIST': 5,
+        'RESISC45': 15,
+        'SVHN': 4,
+    }
+
+    args = parse_arguments()
+    args.lr = 1e-4
+    args.epochs = epochs
+    args.data_location = data_location
+    args.batch_size = 32
+    args.model = model
+
+    args.save = f'checkpoints'                          #checkpoint directory
+    eval_datasets = datasets
+    args.eval_datasets = eval_datasets
+    
+    args.split = True                                   # Used only for the eval function. 
+                                                        # True: Train split | False: Val split
+    args.results_db = f'results'                        # Used to save the results in a .csv file
+    eval_single_task(args)

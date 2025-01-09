@@ -55,6 +55,12 @@ def parse_arguments():
         help="The type of model (e.g. RN50, ViT-B-32).",
     )
     parser.add_argument(
+        "--opt-coeff",
+        type=float,
+        default = None,
+        help="Coefficient for the task vector 1.0 is the finetuned model",
+    )
+    parser.add_argument(
         "--batch-size",
         type=int,
         default=32,
