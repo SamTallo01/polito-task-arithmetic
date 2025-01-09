@@ -64,8 +64,9 @@ def evaluate(image_encoder, args):
 
         print(f"{dataset_name} Top-1 accuracy: {results['top1']:.4f}")
         per_dataset_results[dataset_name + ":top1"] = results["top1"]
-        logdet_hF = train_diag_fim_logtr(args, image_encoder,  dataset_name, samples_nr)
-        print(f"##################### Log-det of the Fisher Information Matrix: {logdet_hF}")
+        if dataset_name.endswith('Val') and args.split:
+            logdet_hF = train_diag_fim_logtr(args, image_encoder,  dataset_name, samples_nr)
+            print(f"##################### Log-det of the Fisher Information Matrix: {logdet_hF}")
 
     return per_dataset_results
 
@@ -94,8 +95,7 @@ def eval_single_task(args):
         args.split = False
         print(f"Evaluating on test set of {dataset}.")
         eval_single_dataset(image_encoder, dataset, args)
-        logdet_hF = train_diag_fim_logtr(args, image_encoder, dataset, samples_nr)
-        print(f"##################### Log-det of the Fisher Information Matrix: {logdet_hF}")
+
 
     print("=" * 100)
     print(f"Evaluating on the finetuned models")
@@ -119,8 +119,7 @@ def eval_single_task(args):
         args.split = False
         print(f"Evaluating on test set.")
         eval_single_dataset(image_encoder, dataset, args)
-        logdet_hF = train_diag_fim_logtr(args, image_encoder, dataset, samples_nr)
-        print(f"##################### Log-det of the Fisher Information Matrix: {logdet_hF}")
+
 
     return
 
