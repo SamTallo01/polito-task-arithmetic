@@ -9,7 +9,7 @@ from task_vectors import NonLinearTaskVector
 
 def function(args):
 
-    eval_datasets = ["DTD", "EuroSAT"]#, "GTSRB", "MNIST", "RESISC45", "SVHN"]
+    eval_datasets = ["DTD", "EuroSAT", "GTSRB", "MNIST", "RESISC45", "SVHN"]
     task_vectors = []
 
     for dataset in eval_datasets:
