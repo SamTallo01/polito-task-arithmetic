@@ -48,8 +48,6 @@ def eval_single_dataset(image_encoder, dataset_name, args):
 
 def evaluate(image_encoder, args):
 
-    samples_nr = 2000 # How many per-example gradients to accumulate
-
     if args.eval_datasets is None:
         return
     per_dataset_results = {}
@@ -64,9 +62,7 @@ def evaluate(image_encoder, args):
 
         print(f"{dataset_name} Top-1 accuracy: {results['top1']:.4f}")
         per_dataset_results[dataset_name + ":top1"] = results["top1"]
-        if dataset_name.endswith('Val') and args.split:
-            logdet_hF = train_diag_fim_logtr(args, image_encoder,  dataset_name, samples_nr)
-            print(f"##################### Log-det of the Fisher Information Matrix: {logdet_hF}")
+       
 
     return per_dataset_results
 

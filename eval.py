@@ -24,7 +24,7 @@ def evaluate_task_vector(task_vector, pretrained_checkpoint, args):
         print()
         print()
 
-        info[scaling_coef] = evaluate_task_vector_at_coef(task_vector,pretrained_checkpoint,args,scaling_coef,)
+        info[scaling_coef] = evaluate_task_vector_at_coef(task_vector,pretrained_checkpoint,args,scaling_coef)
 
     return info
 
