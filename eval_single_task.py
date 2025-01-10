@@ -48,6 +48,7 @@ def eval_single_dataset(image_encoder, dataset_name, args):
 
 def evaluate(image_encoder, args):
 
+
     if args.eval_datasets is None:
         return
     per_dataset_results = {}
@@ -62,7 +63,13 @@ def evaluate(image_encoder, args):
 
         print(f"{dataset_name} Top-1 accuracy: {results['top1']:.4f}")
         per_dataset_results[dataset_name + ":top1"] = results["top1"]
-       
+        if dataset_name.endswith('Val') and args.split:
+            # Log-det of the Fisher Information Matrix
+            classification_head = get_classification_head(args, dataset_name)
+            model = ImageClassifier(image_encoder, classification_head)
+            samples_nr = 200
+            logdet_hF = train_diag_fim_logtr(args, model,  dataset_name , samples_nr)
+            print(f"{'='*100}\nLog-det of the Fisher Information Matrix: {logdet_hF}\n{'='*100}")
 
     return per_dataset_results
 
@@ -71,20 +78,24 @@ def evaluate(image_encoder, args):
 def eval_single_task(args):
 
     eval_datasets = args.eval_datasets
-    samples_nr = 2000 # How many per-example gradients to accumulate
-
+    samples_nr = 200 # How many per-example gradients to accumulate
+    
     for dataset in eval_datasets:
         pretrained_checkpoint = f"{args.save}/{dataset}Val/zeroshot.pt"
+        train_dataset = dataset + "Val"
 
         # Training set
         image_encoder = ImageEncoder.load(pretrained_checkpoint)
-
         print("=" * 100)
         print(f"Evaluating on training set of {dataset}.")
         args.split = True
-        eval_single_dataset(image_encoder, dataset + "Val", args)
-        logdet_hF = train_diag_fim_logtr(args, image_encoder,  dataset + "Val" , samples_nr)
-        print(f"##################### Log-det of the Fisher Information Matrix: {logdet_hF}")
+        eval_single_dataset(image_encoder, train_dataset, args)
+
+        # Log-det of the Fisher Information Matrix
+        classification_head = get_classification_head(args, train_dataset)
+        model = ImageClassifier(image_encoder, classification_head)
+        logdet_hF = train_diag_fim_logtr(args, model,  train_dataset , samples_nr)
+        print(f"{'='*100}\nLog-det of the Fisher Information Matrix: {logdet_hF}\n{'='*100}")
 
         # Test set
         print("=" * 100)
@@ -99,26 +110,27 @@ def eval_single_task(args):
 
     for dataset in eval_datasets:
         finetuned_checkpoint = f"{args.save}/{dataset}Val/finetuned.pt"
+        train_dataset = dataset + "Val"
 
         # Training set
         image_encoder = ImageEncoder.load(finetuned_checkpoint)
-
         print("=" * 100)
         print(f"Evaluating on training set.")
         args.split = True
         eval_single_dataset(image_encoder, dataset + "Val", args)
-        logdet_hF = train_diag_fim_logtr(args, image_encoder, dataset + "Val", samples_nr)
-        print(f"##################### Log-det of the Fisher Information Matrix: {logdet_hF}")
+
+        # Log-det of the Fisher Information Matrix
+        classification_head = get_classification_head(args, train_dataset)
+        model = ImageClassifier(image_encoder, classification_head)
+        logdet_hF = train_diag_fim_logtr(args, model,  train_dataset , samples_nr)
+        print(f"{'='*100}\nLog-det of the Fisher Information Matrix: {logdet_hF}\n{'='*100}")
 
         # Test set
         print("=" * 100)
         args.split = False
         print(f"Evaluating on test set.")
         eval_single_dataset(image_encoder, dataset, args)
-
-
     return
-
 
 
 
