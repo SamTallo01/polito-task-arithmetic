@@ -7,9 +7,52 @@ from datasets.templates import get_templates
 from heads import get_classification_head
 from datasets.common import get_dataloader, maybe_dictionarize
 from eval_single_task import evaluate
-
+from utils import train_diag_fim_logtr
 from args import parse_arguments
 
+# def eval_best_fim_checkpoint(args, model, epoch, best_fim):
+    
+#     """
+#     Evaluate and update the best FIM checkpoint based on the diagonal FIM log-trace criterion
+#     """
+#     samples_nr = 200
+#     logdet_hF = train_diag_fim_logtr(args, model, args.train_dataset , samples_nr)
+    
+#      # Update the best FIM checkpoint if the log-trace improves
+#     if logdet_hF > best_fim["value"]:
+#         # Delete the previous best checkpoint
+#         if best_fim["path"] and os.path.exists(best_fim["path"]):
+#             os.remove(best_fim["path"])
+        
+#         best_fim["value"] = logdet_hF
+#         dataset_folder = os.path.join(args.save, args.train_dataset)
+#         best_fim["path"] = os.path.join(dataset_folder, f"best_fim_epoch_{epoch}.pt")
+#         model.image_encoder.save(best_fim["path"])
+#         print(f"New best FIM checkpoint: {best_fim['path']} (Log-Trace: {logdet_hF:.4f})")
+#     return best_fim
+
+# def eval_best_val_checkpoint(args, model, epoch, best_val):
+    
+#     """
+#     Evaluate and update the best validation accuray criterion
+#     """
+#     image_encoder = model.image_encoder
+#     val_acc_metrics = evaluate(image_encoder, args)
+#     val_acc = val_acc_metrics[args.train_dataset + ":top1"]
+    
+#     # Update the best validation accuray checkpoint if it improves
+#     if val_acc > best_val["value"]:
+#         # Delete the previous best checkpoint
+#         if best_val["path"] and os.path.exists(best_val["path"]):
+#             os.remove(best_val["path"])
+            
+#         best_val["value"] = val_acc
+#         dataset_folder = os.path.join(args.save, args.train_dataset)
+#         best_val["path"] = os.path.join(dataset_folder, f"best_val_epoch_{epoch}.pt")
+#         image_encoder.save(best_val["path"])
+#         print(f"New best validation accuracy checkpoint saved at {best_val['path']} with accuracy {val_acc:.4f}")
+
+#     return best_val
 
 def finetune(args):
     
@@ -18,7 +61,7 @@ def finetune(args):
     print('='*100)
     ckpdir = os.path.join(args.save, train_dataset)
 
-    # Check if checkpoints already exist
+    #Check if checkpoints already exist
     ft_path = (os.path.join(args.save, train_dataset, "finetuned.pt"))
     zs_path = (os.path.join(args.save, train_dataset, "zeroshot.pt"))
 
@@ -60,7 +103,7 @@ def finetune(args):
 
     if args.save is not None:
         zs_path = os.path.join(ckpdir, 'zeroshot.pt')
-        # Salva il checkpoint zeroshot solo se non esiste già
+        # Save the zeroshot checkpoint only if it doesn't already exist
         if train_dataset.endswith('Val'):
             if not os.path.exists(zs_path):
                 print(f"Saving zeroshot checkpoint at {zs_path}")
@@ -68,6 +111,11 @@ def finetune(args):
             else:
                 print(f"Zeroshot checkpoint already exists at {zs_path}, skipping save.")
 
+    # # best_fim: Tracks the checkpoint with the highest diagonal FIM log-trace value.
+    # best_fim = {"value": float("-inf"), "path": None}
+    # # best_val_acc: Tracks the checkpoint with the highest validation accuracy.
+    # best_val_acc = {"value": float("-inf"), "path": None}
+    
     if args.train is not None and args.train is True:
         for epoch in range(args.epochs):
             model = model.to(device)
@@ -104,13 +152,29 @@ def finetune(args):
                         f"Train Epoch: {epoch} [{percent_complete:.0f}% {i}/{len(dataset.train_loader)}]\t"
                         f"Loss: {loss.item():.6f}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}", flush=True
                     )
+            # #Evaluate and save the best FIM checkpoint
+            # best_fim = eval_best_fim_checkpoint(args, model, epoch, best_fim)
+            # print("=" * 100)
+
+            # # Evaluate and save the best valisation accuracy checkpoint
+            # best_val_acc = eval_best_val_checkpoint(args, model, epoch, best_val_acc)
+            # print("=" * 100)
+
+    # #Final evaluation
+    # print("=" * 100)
+    # print(f"Finetuning completed for {train_dataset}.")
+    # print(f"Best FIM checkpoint: {best_fim['path']} with log-trace {best_fim['value']:.4f}")
+    # print(f"Best validation accuracy checkpoint: {best_val_acc['path']} with accuracy {best_val_acc['value']:.4f}")
+    # print("=" * 100)
+
+    # return best_fim["path"], best_val_acc["path"]
     
     if args.train:
         ft_path = os.path.join(ckpdir, 'finetuned.pt')
         print(f"Saving fine-tuned checkpoint at {ft_path}")
         image_encoder.save(ft_path)
         
-    # Evaluate
+    Evaluate
     image_encoder = model.image_encoder
     evaluate(image_encoder, args) 
 
@@ -120,7 +184,7 @@ if __name__ == '__main__':
 
     data_location = 'Task_Arithmetic_Datasets'
     model = 'ViT-B-32-quickgelu'
-    datasets = ['DTD', 'EuroSAT']
+    datasets = ['DTD']
     epochs = {
         'DTD': 76,
         'EuroSAT': 12,
@@ -138,19 +202,19 @@ if __name__ == '__main__':
         args.lr = 1e-4
         args.epochs = epochs[dataset]
         args.data_location = data_location
-        args.train_dataset = dataset + 'Val' 
+        args.train_dataset = dataset + 'Val'
         args.batch_size = 32
         args.model = model
 
-        args.save = f'checkpoints'                          #checkpoint directory
-        eval_datasets = [dataset + "Val" for dataset in datasets]                # Use Val for train and val, remove for test + split = False
+        args.save = f'best_checkpoints'                                       #checkpoint directory
+        eval_datasets = [dataset  + 'Val' for dataset in datasets]                  # Use Val for train and val, remove for test + split = False
         args.eval_datasets = eval_datasets
-        #args.load = f'checkpoints/DTDVal/zeroshot.pt'     # Used for loading a model
+        #args.load = f'checkpoints/RESISC45Val/finetuned.pt'              # Used for loading a model
 
-        args.split = True                                   # Used only for the eval function. 
-                                                            # True: Train split | False: Val split
-        args.train = False                                   # Used to train the model
-        args.results_db = f'results'                        # Used to save the results in a .csv file
+        args.split = True                                                           # Used only for the eval function. 
+                                                                                    # True: Train split | False: Val split
+        args.train = True                                                           # Used to train the model
+        args.results_db = f'results'                                                # Used to save the results in a .csv file
         finetune(args)
 
 
