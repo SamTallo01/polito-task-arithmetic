@@ -16,14 +16,15 @@ class BalancedDataset(Dataset):
         # Extract labels from the dataset
         self.labels = []
         for i in range(len(original_dataset)):
-            _, label = original_dataset[i]
+            _, label = original_dataset[i]              #Iterating over all the samples in the original dataset to extract the labels
 
-            # Ensure label is an integer
+            # Ensure label is an integer for consistency
             if isinstance(label, int):
                 self.labels.append(label)
             else:
                 self.labels.append(label.item())  # Convert to integer if necessary
 
+        # Count how many samples belong to each class
         label_counts = Counter(self.labels)
 
         # Find the size of the smallest class
@@ -51,44 +52,3 @@ class BalancedDataset(Dataset):
         # Map the index to the balanced indices
         original_idx = self.balanced_indices[idx]
         return self.original_dataset[original_idx]
-
-# class BalancedDataset(Dataset):
-#     def __init__(self, original_dataset):
-#         """
-#         Balances the dataset by subsampling over-represented classes.
-        
-#         Args:
-#             original_dataset: PyTorch Dataset object to balance.
-#         """
-#         self.original_dataset = original_dataset
-#         self.balanced_indices = self._balance_classes()
-
-#     def _balance_classes(self):
-#         """
-#         Subsamples over-represented classes to match the size of the smallest class.
-#         """
-#         # Group indices by class
-#         class_indices = {}
-#         for idx in range(len(self.original_dataset)):
-#             _, label = self.original_dataset[idx]
-            
-#             if label not in class_indices:
-#                 class_indices[label] = []
-#             class_indices[label].append(idx)
-
-#         # Find the size of the smallest class
-#         min_class_size = min(len(indices) for indices in class_indices.values())
-
-#         # Subsample each class to the minimum size
-#         balanced_indices = []
-#         for indices in class_indices.values():
-#             balanced_indices.extend(random.sample(indices, min_class_size))
-
-#         return balanced_indices
-
-#     def __len__(self):
-#         return len(self.balanced_indices)
-
-#     def __getitem__(self, index):
-#         balanced_index = self.balanced_indices[index]
-#         return self.original_dataset[balanced_index]

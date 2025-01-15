@@ -89,7 +89,18 @@ def finetune(args):
         batch_size=args.batch_size
     )
     
-    #wrap the dataset with BalancedDataset in order to balance the class distribution
+    # We placed the zeroshot saving here to ensure that the balancing data doesn't affect it, and it is based on the original pretrained state. 
+    if args.save is not None:
+        zs_path = os.path.join(ckpdir, 'zeroshot.pt')
+        # Save the zeroshot checkpoint only if it doesn't already exist
+        if train_dataset.endswith('Val'):
+            if not os.path.exists(zs_path):
+                print(f"Saving zeroshot checkpoint at {zs_path}")
+                image_encoder.save(zs_path)
+            else:
+                print(f"Zeroshot checkpoint already exists at {zs_path}, skipping save.")
+    
+    # Wrap the dataset with BalancedDataset in order to balance the class distribution
     balanced_dataset = BalancedDataset(dataset.train_dataset)
     
      # Debug: Check class distributions
@@ -122,16 +133,6 @@ def finetune(args):
     
     #SGD is used as the optimizer for the model
     optimizer = torch.optim.SGD(params, lr=args.lr, weight_decay=0)
-
-    if args.save is not None:
-        zs_path = os.path.join(ckpdir, 'zeroshot.pt')
-        # Save the zeroshot checkpoint only if it doesn't already exist
-        if train_dataset.endswith('Val'):
-            if not os.path.exists(zs_path):
-                print(f"Saving zeroshot checkpoint at {zs_path}")
-                image_encoder.save(zs_path)
-            else:
-                print(f"Zeroshot checkpoint already exists at {zs_path}, skipping save.")
 
     # # best_fim: Tracks the checkpoint with the highest diagonal FIM log-trace value.
     # best_fim = {"value": float("-inf"), "path": None}
@@ -228,14 +229,14 @@ if __name__ == '__main__':
         args.batch_size = 32
         args.model = model
 
-        args.save = f'balanced_checkpoints'                                       #checkpoint directory
+        args.save = f'balanced_checkpoints'                                         # Checkpoint directory
         eval_datasets = [dataset  + 'Val' for dataset in datasets]                  # Use Val for train and val, remove for test + split = False
         args.eval_datasets = eval_datasets
-        #args.load = f'checkpoints/DTDVal/finetuned.pt'              # Used for loading a model
+        args.load = f'balanced_checkpoints/DTDVal/finetune.pt'                             # Used for loading a model
 
-        args.split = True                                                           # Used only for the eval function. 
+        args.split = False                                                          # Used only for the eval function. 
                                                                                     # True: Train split | False: Val split
-        args.train = True                                                           # Used to train the model
+        args.train = False                                                           # Used to train the model
         args.results_db = f'results'                                                # Used to save the results in a .csv file
         finetune(args)
 
