@@ -9,6 +9,7 @@ from datasets.common import get_dataloader, maybe_dictionarize
 from eval_single_task import evaluate
 from utils import train_diag_fim_logtr
 from args import parse_arguments
+from balanced_data import BalancedDataset
 
 # def eval_best_fim_checkpoint(args, model, epoch, best_fim):
     
@@ -87,8 +88,29 @@ def finetune(args):
         location=args.data_location,
         batch_size=args.batch_size
     )
+    
+    #wrap the dataset with BalancedDataset in order to balance the class distribution
+    balanced_dataset = BalancedDataset(dataset.train_dataset)
+    
+     # Debug: Check class distributions
+    from collections import Counter
 
-    num_batches = len(dataset.train_loader)
+    # Check balanced dataset distribution
+    balanced_labels = [balanced_dataset[i][1] for i in range(len(balanced_dataset))]
+    balanced_distribution = Counter(balanced_labels)
+
+    # Check original dataset distribution
+    original_labels = [dataset.train_dataset[i][1] for i in range(len(dataset.train_dataset))]
+    original_distribution = Counter(original_labels)
+
+    print("Class distribution in the original dataset:", original_distribution)
+    print("Class distribution in the balanced dataset:", balanced_distribution)
+
+    # Verify balance
+    assert len(set(balanced_distribution.values())) == 1, "Balanced dataset is not correctly balanced!"
+    print("Balanced dataset is correctly balanced.")
+   
+    num_batches = len(balanced_dataset)
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Using device: {device}")
@@ -120,7 +142,7 @@ def finetune(args):
         for epoch in range(args.epochs):
             model = model.to(device)
             model.train()
-            data_loader = get_dataloader(dataset, is_train=True, args=args, image_encoder=None)
+            data_loader = get_dataloader(balanced_dataset, is_train=True, args=args, image_encoder=None)
 
             for i, batch in enumerate(data_loader):
                 start_time = time.time()
@@ -149,7 +171,7 @@ def finetune(args):
                 if step % print_every == 0:
                     percent_complete = 100 * i / len(data_loader)
                     print(
-                        f"Train Epoch: {epoch} [{percent_complete:.0f}% {i}/{len(dataset.train_loader)}]\t"
+                        f"Train Epoch: {epoch} [{percent_complete:.0f}% {i}/{len(data_loader)}]\t"
                         f"Loss: {loss.item():.6f}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}", flush=True
                     )
             # #Evaluate and save the best FIM checkpoint
@@ -174,7 +196,7 @@ def finetune(args):
         print(f"Saving fine-tuned checkpoint at {ft_path}")
         image_encoder.save(ft_path)
         
-    Evaluate
+    #Evaluate
     image_encoder = model.image_encoder
     evaluate(image_encoder, args) 
 
@@ -206,10 +228,10 @@ if __name__ == '__main__':
         args.batch_size = 32
         args.model = model
 
-        args.save = f'best_checkpoints'                                       #checkpoint directory
+        args.save = f'balanced_checkpoints'                                       #checkpoint directory
         eval_datasets = [dataset  + 'Val' for dataset in datasets]                  # Use Val for train and val, remove for test + split = False
         args.eval_datasets = eval_datasets
-        #args.load = f'checkpoints/RESISC45Val/finetuned.pt'              # Used for loading a model
+        #args.load = f'checkpoints/DTDVal/finetuned.pt'              # Used for loading a model
 
         args.split = True                                                           # Used only for the eval function. 
                                                                                     # True: Train split | False: Val split
