@@ -252,7 +252,7 @@ if __name__ == '__main__':
     args.results_db = f'results.csv'                # Results saved to this CSV file
 
     #Example of how to load a checkpoint
-    args.load = f'checkpoints_batch_size_8/DTDVal/finetuned.pt'
+    #args.load = f'checkpoints_batch_size_8/DTDVal/finetuned.pt'
 
     # If a checkpoint is specified, evaluate it otherwise evaluate all datasets finetuned and zeroshot 
     # that are in the folder specified by args.save
