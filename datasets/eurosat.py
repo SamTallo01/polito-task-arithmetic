@@ -17,7 +17,7 @@ class EuroSATBase:
                  test_split,
                  location='~/datasets',
                  batch_size=32,
-                 num_workers=16):
+                 num_workers=0):
         # Data loading code
         traindir = os.path.join(location, 'EuroSAT_splits', 'train')
         testdir = os.path.join(location, 'EuroSAT_splits', test_split)
@@ -62,7 +62,7 @@ class EuroSAT(EuroSATBase):
                  preprocess,
                  location='~/datasets',
                  batch_size=32,
-                 num_workers=16):
+                 num_workers=0):
         super().__init__(preprocess, 'test', location, batch_size, num_workers)
 
 
@@ -71,5 +71,5 @@ class EuroSATVal(EuroSATBase):
                  preprocess,
                  location='~/datasets',
                  batch_size=32,
-                 num_workers=16):
+                 num_workers=0):
         super().__init__(preprocess, 'val', location, batch_size, num_workers)

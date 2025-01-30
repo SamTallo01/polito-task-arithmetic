@@ -13,6 +13,18 @@ def parse_arguments():
         help="The root directory for the datasets.",
     )
     parser.add_argument(
+        "--split",
+        type=bool,
+        default=True,
+        help="Used for the get_dataloader(..) to access the train/val/test split.",
+    )
+    parser.add_argument(
+        "--training",
+        type=bool,
+        default=True,
+        help="Used to specify the training of the dataset.",
+    )
+    parser.add_argument(
         "--eval-datasets",
         default=None,
         type=lambda x: x.split(","),
@@ -39,8 +51,14 @@ def parse_arguments():
     parser.add_argument(
         "--model",
         type=str,
-        default="ViT-B-32",
+        default="ViT-B-32-quickgelu",
         help="The type of model (e.g. RN50, ViT-B-32).",
+    )
+    parser.add_argument(
+        "--opt-coeff",
+        type=float,
+        default = None,
+        help="Coefficient for the task vector 1.0 is the finetuned model",
     )
     parser.add_argument(
         "--batch-size",

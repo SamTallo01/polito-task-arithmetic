@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 import torchvision.datasets as datasets
 from torch.utils.data import Dataset, DataLoader, Sampler
-
+from balanced_data import BalancedDataset
 
 class SubsetSampler(Sampler):
     def __init__(self, indices):
@@ -134,6 +134,10 @@ def get_dataloader(dataset, is_train, args, image_encoder=None):
     if image_encoder is not None:
         feature_dataset = FeatureDataset(is_train, image_encoder, dataset, args.device)
         dataloader = DataLoader(feature_dataset, batch_size=args.batch_size, shuffle=is_train)
+    elif isinstance(dataset, BalancedDataset):
+        # Create a DataLoader directly for BalancedDataset
+        dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=is_train)
     else:
+        # Use train_loader or test_loader for standard datasets
         dataloader = dataset.train_loader if is_train else dataset.test_loader
     return dataloader

@@ -7,7 +7,6 @@ from tqdm.auto import tqdm
 from datasets.common import get_dataloader, maybe_dictionarize
 from datasets.registry import get_dataset
 
-
 def torch_save(model, save_path):
     if os.path.dirname(save_path) != "":
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
@@ -19,6 +18,12 @@ def torch_load(save_path, device=None):
     if device is not None:
         model = model.to(device)
     return model
+
+def get_logits(inputs, classifier):
+    assert callable(classifier)
+    if hasattr(classifier, "to"):
+        classifier = classifier.to(inputs.device)
+    return classifier(inputs)
 
 
 class DotDict(dict): 
@@ -93,3 +98,30 @@ def train_diag_fim_logtr(
     fim_trace = torch.log(fim_trace / samples_nr).item()
 
     return fim_trace
+
+def find_optimal_coef(
+    results,
+    metric="avg_normalized_top1",
+    minimize=False,
+    control_metric=None,
+    control_metric_threshold=0.0,
+):
+    best_coef = None
+    if minimize:
+        best_metric = 1
+    else:
+        best_metric = 0
+    for scaling_coef in results.keys():
+        if control_metric is not None:
+            if results[scaling_coef][control_metric] < control_metric_threshold:
+                print(f"Control metric fell below {control_metric_threshold} threshold")
+                continue
+        if minimize:
+            if results[scaling_coef][metric] < best_metric:
+                best_metric = results[scaling_coef][metric]
+                best_coef = scaling_coef
+        else:
+            if results[scaling_coef][metric] > best_metric:
+                best_metric = results[scaling_coef][metric]
+                best_coef = scaling_coef
+    return best_coef
