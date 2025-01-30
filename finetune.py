@@ -9,47 +9,47 @@ from eval import evaluate
 from datasets.common import get_dataloader, maybe_dictionarize
 from args import parse_arguments
 
-def eval_best_fim_checkpoint(args, model, epoch, best_fim):
-    """
-    Evaluate and update the best FIM checkpoint based on the diagonal FIM log-trace criterion
-    """
-    samples_nr = 200
-    logdet_hF = train_diag_fim_logtr(args, model, args.train_dataset , samples_nr)
+# def eval_best_fim_checkpoint(args, model, epoch, best_fim):
+#     """
+#     Evaluate and update the best FIM checkpoint based on the diagonal FIM log-trace criterion
+#     """
+#     samples_nr = 200
+#     logdet_hF = train_diag_fim_logtr(args, model, args.train_dataset , samples_nr)
     
-     # Update the best FIM checkpoint if the log-trace improves
-    if logdet_hF > best_fim["value"]:
-        # Delete the previous best checkpoint
-        if best_fim["path"] and os.path.exists(best_fim["path"]):
-            os.remove(best_fim["path"])
+#      # Update the best FIM checkpoint if the log-trace improves
+#     if logdet_hF > best_fim["value"]:
+#         # Delete the previous best checkpoint
+#         if best_fim["path"] and os.path.exists(best_fim["path"]):
+#             os.remove(best_fim["path"])
         
-        best_fim["value"] = logdet_hF
-        dataset_folder = os.path.join(args.save, args.train_dataset)
-        best_fim["path"] = os.path.join(dataset_folder, f"best_fim_epoch_{epoch}.pt")
-        model.image_encoder.save(best_fim["path"])
-        print(f"New best FIM checkpoint: {best_fim['path']} (Log-Trace: {logdet_hF:.4f})")
-    return best_fim
+#         best_fim["value"] = logdet_hF
+#         dataset_folder = os.path.join(args.save, args.train_dataset)
+#         best_fim["path"] = os.path.join(dataset_folder, f"best_fim_epoch_{epoch}.pt")
+#         model.image_encoder.save(best_fim["path"])
+#         print(f"New best FIM checkpoint: {best_fim['path']} (Log-Trace: {logdet_hF:.4f})")
+#     return best_fim
 
-def eval_best_val_checkpoint(args, model, epoch, best_val):
-    """
-    Evaluate and update the best validation accuray criterion
-    """
-    image_encoder = model.image_encoder
-    val_acc_metrics = evaluate(image_encoder, args)
-    val_acc = val_acc_metrics[args.train_dataset + ":top1"]
+# def eval_best_val_checkpoint(args, model, epoch, best_val):
+#     """
+#     Evaluate and update the best validation accuray criterion
+#     """
+#     image_encoder = model.image_encoder
+#     val_acc_metrics = evaluate(image_encoder, args)
+#     val_acc = val_acc_metrics[args.train_dataset + ":top1"]
     
-    # Update the best validation accuray checkpoint if it improves
-    if val_acc > best_val["value"]:
-        # Delete the previous best checkpoint
-        if best_val["path"] and os.path.exists(best_val["path"]):
-            os.remove(best_val["path"])
+#     # Update the best validation accuray checkpoint if it improves
+#     if val_acc > best_val["value"]:
+#         # Delete the previous best checkpoint
+#         if best_val["path"] and os.path.exists(best_val["path"]):
+#             os.remove(best_val["path"])
             
-        best_val["value"] = val_acc
-        dataset_folder = os.path.join(args.save, args.train_dataset)
-        best_val["path"] = os.path.join(dataset_folder, f"best_val_epoch_{epoch}.pt")
-        image_encoder.save(best_val["path"])
-        print(f"New best validation accuracy checkpoint saved at {best_val['path']} with accuracy {val_acc:.4f}")
+#         best_val["value"] = val_acc
+#         dataset_folder = os.path.join(args.save, args.train_dataset)
+#         best_val["path"] = os.path.join(dataset_folder, f"best_val_epoch_{epoch}.pt")
+#         image_encoder.save(best_val["path"])
+#         print(f"New best validation accuracy checkpoint saved at {best_val['path']} with accuracy {val_acc:.4f}")
 
-    return best_val
+#     return best_val
 
 
 def finetune(args):
