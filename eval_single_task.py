@@ -108,6 +108,8 @@ def eval_single_task(args):
     learning_rate = args.lr
     weight_decay = getattr(args, 'weight_decay', None)  # Assuming weight_decay exists in args
 
+    #Initialize the result
+    results = {}
     for dataset in eval_datasets:
         pretrained_checkpoint = f"{args.save}/{dataset}Val/zeroshot.pt"
         train_dataset = dataset + "Val"
@@ -143,7 +145,6 @@ def eval_single_task(args):
         results[dataset]["test"] = {"top1": test_metrics["top1"]}
 
     for dataset in eval_datasets:
-        results = {}
         finetuned_checkpoint = f"{args.save}/{dataset}Val/finetuned.pt"
         train_dataset = dataset + "Val"
 
@@ -162,7 +163,9 @@ def eval_single_task(args):
         print(f"{'='*100}\nLog-det of the Fisher Information Matrix: {logdet_hF}\n{'='*100}")
 
         # Save finetuned training results
-        results[dataset] = {}
+        if dataset not in results:
+            results[dataset] = {}
+            
         results[dataset]["finetuned_train"] = {"top1": train_metrics["top1"], "logdet_hF": logdet_hF}
 
         # Test set
@@ -229,7 +232,7 @@ if __name__ == '__main__':
     import os
     data_location = 'Task_Arithmetic_Datasets'
     model = 'ViT-B-32-quickgelu'
-    datasets = ['DTD', 'EuroSAT', 'GTSRB', 'MNIST', 'RESISC45', 'SVHN']
+    datasets = ['DTD']
     epochs = {
         'DTD': 76,
         'EuroSAT': 12,
@@ -247,12 +250,12 @@ if __name__ == '__main__':
     args.model = model
     args.weight_decay = 0.0                         # Is also saved in the result file if specified
 
-    args.save = f'checkpoints_batch_size_8'
+    args.save = f'checkpoints'
     args.eval_datasets = datasets
     args.results_db = f'results.csv'                # Results saved to this CSV file
 
     #Example of how to load a checkpoint
-    #args.load = f'checkpoints_batch_size_8/DTDVal/finetuned.pt'
+    # args.load = f'checkpoints/DTDVal/finetuned.pt'
 
     # If a checkpoint is specified, evaluate it otherwise evaluate all datasets finetuned and zeroshot 
     # that are in the folder specified by args.save
