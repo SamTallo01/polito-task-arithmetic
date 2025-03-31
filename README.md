@@ -35,3 +35,12 @@ In the following, you can find a brief description of the included files.
 | `balanced_data.py` | It contains some utility functions for constructing the balanced datasets  | 
 ## Running The Experiments
 In order to run the experiments we modified the variables inside the code itself and didn't use the scripts to run the code.
+
+## Authors
+- [Jessy Habib](https://github.com/jessyhabib)
+- [Ghadi Haj](https://github.com/GhadiHaj)
+- [Samuele Tallone](https://github.com/SamTallo01)
+
+## Scientific Paper
+You can find the related scientific paper at the following link:  
+[Scientific Paper](https://drive.google.com/file/d/1SG0asl9bTwRhX8qzt9Ax700XfUyHVNZZ/view?usp=sharing)
